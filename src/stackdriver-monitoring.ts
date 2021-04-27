@@ -194,7 +194,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
         auth: authClient,
       };
 
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         monitoring.projects.timeSeries.create(
           request,
           { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] },
@@ -223,7 +223,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
         auth: authClient,
       };
 
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         monitoring.projects.metricDescriptors.create(
           request,
           { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] },
