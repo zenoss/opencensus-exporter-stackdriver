@@ -48,6 +48,7 @@ const OC_USER_AGENT = {
 const OC_HEADER = {
   'x-opencensus-outgoing-request': 0x1,
 };
+const STACKDRIVER_TIMESERIES_LIMIT = 200;
 
 google.options({ headers: OC_HEADER });
 const monitoring = google.monitoring('v3');
@@ -188,22 +189,32 @@ export class StackdriverStatsExporter implements StatsEventListener {
     }
 
     return this.authorize().then(authClient => {
-      const request = {
-        name: `projects/${this.projectId}`,
-        resource: { timeSeries },
-        auth: authClient,
-      };
+      const promises: Promise<void>[] = [];
+      let chunkIndex: number = 0;
+      while (chunkIndex < timeSeries.length) {
+        const request = {
+          name: `projects/${this.projectId}`,
+          resource: { timeSeries: timeSeries.slice(chunkIndex, chunkIndex + STACKDRIVER_TIMESERIES_LIMIT) },
+          auth: authClient,
+        };
 
-      return new Promise<void>((resolve, reject) => {
-        monitoring.projects.timeSeries.create(
-          request,
-          { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] },
-          (err: Error | null) => {
-            this.logger.debug('sent time series', request.resource.timeSeries);
-            err ? reject(err) : resolve();
-          }
+        promises.push(
+          new Promise<void>((resolve, reject) => {
+            monitoring.projects.timeSeries.create(
+              request,
+              { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] },
+              (err: Error | null) => {
+                this.logger.debug('sent time series', request.resource.timeSeries);
+                err ? reject(err) : resolve();
+              }
+            );
+          })
         );
-      });
+
+        chunkIndex += STACKDRIVER_TIMESERIES_LIMIT;
+      }
+
+      return Promise.allSettled(promises);
     });
   }
 
