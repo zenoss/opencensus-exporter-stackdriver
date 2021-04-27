@@ -1,5 +1,5 @@
 {
-  "name": "@opencensus/exporter-stackdriver",
+  "name": "opencensus-exporter-stackdriver",
   "version": "0.0.22",
   "description": "OpenCensus Exporter Stackdriver allows user to send collected traces to Stackdriver",
   "main": "build/src/index.js",
