@@ -234,6 +234,11 @@ export class StackdriverStatsExporter implements StatsEventListener {
         auth: authClient,
       };
 
+      this.logger.info(`authClient = ${JSON.stringify(authClient)}`)
+      this.logger.info(`projectId = ${this.projectId}`)
+      this.logger.info(`metricPrefix = ${this.metricPrefix}`)
+      this.logger.info(`displayNamePrefix = ${this.displayNamePrefix}`)
+
       return new Promise<void>((resolve, reject) => {
         monitoring.projects.metricDescriptors.create(
           request,
