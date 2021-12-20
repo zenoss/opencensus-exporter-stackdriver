@@ -179,6 +179,10 @@ class StackdriverStatsExporter {
                 resource: stackdriver_monitoring_utils_1.createMetricDescriptorData(metricDescriptor, this.metricPrefix, this.displayNamePrefix),
                 auth: authClient,
             };
+            this.logger.info(`authClient = ${JSON.stringify(authClient)}`);
+            this.logger.info(`projectId = ${this.projectId}`);
+            this.logger.info(`metricPrefix = ${this.metricPrefix}`);
+            this.logger.info(`displayNamePrefix = ${this.displayNamePrefix}`);
             return new Promise((resolve, reject) => {
                 monitoring.projects.metricDescriptors.create(request, { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] }, (err) => {
                     this.logger.debug('sent metric descriptor', request.resource);
