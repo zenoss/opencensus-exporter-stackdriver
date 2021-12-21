@@ -70,6 +70,7 @@ class StackdriverStatsExporter {
      * Creates a Stackdriver Stats exporter with a StackdriverExporterOptions.
      */
     start() {
+        this.logger.debug("start");
         this.timer = setInterval(() => __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.export();
@@ -87,9 +88,12 @@ class StackdriverStatsExporter {
      */
     export() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.logger.debug("export()");
             const metricsList = [];
             const metricProducerManager = core_1.Metrics.getMetricProducerManager();
+            this.logger.debug(`export(): metricProducerManager.getAllMetricProducer(): ${metricProducerManager.getAllMetricProducer().values()}`);
             for (const metricProducer of metricProducerManager.getAllMetricProducer()) {
+                this.logger.debug(`export(): metricProducer.getMetrics(): ${JSON.stringify(metricProducer.getMetrics())}`);
                 for (const metric of metricProducer.getMetrics()) {
                     // TODO(mayurkale): OPTIMIZATION: consider to call in parallel.
                     const isRegistered = yield this.registerMetricDescriptor(metric.descriptor);
@@ -109,6 +113,7 @@ class StackdriverStatsExporter {
      */
     registerMetricDescriptor(metricDescriptor) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.logger.debug(`registerMetricDescriptor(metricDescriptor_name = ${metricDescriptor.name})`);
             const existingMetricDescriptor = this.registeredMetricDescriptors.get(metricDescriptor.name);
             if (existingMetricDescriptor) {
                 if (existingMetricDescriptor === metricDescriptor) {
@@ -139,12 +144,14 @@ class StackdriverStatsExporter {
      */
     createTimeSeries(metricsList) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.logger.debug(`createTimeSeries(metricsList_lenght = ${metricsList.length})`);
             const timeSeries = [];
             const monitoredResource = yield this.DEFAULT_RESOURCE;
             for (const metric of metricsList) {
                 timeSeries.push(...stackdriver_monitoring_utils_1.createTimeSeriesList(metric, monitoredResource, this.metricPrefix));
             }
             if (timeSeries.length === 0) {
+                this.logger.warn(`createTimeSeries(): timeSeries is of 0 length`);
                 return Promise.resolve();
             }
             return this.authorize().then(authClient => {
@@ -173,21 +180,24 @@ class StackdriverStatsExporter {
      * @param metricDescriptor The OpenCensus MetricDescriptor.
      */
     createMetricDescriptor(metricDescriptor) {
+        this.logger.debug(`createMetricDescriptor(metricDescriptor_name = ${metricDescriptor.name})`);
         return this.authorize().then(authClient => {
             const request = {
                 name: `projects/${this.projectId}`,
                 resource: stackdriver_monitoring_utils_1.createMetricDescriptorData(metricDescriptor, this.metricPrefix, this.displayNamePrefix),
                 auth: authClient,
             };
-            this.logger.info(`authClient = ${JSON.stringify(authClient)}`);
             this.logger.info(`projectId = ${this.projectId}`);
             this.logger.info(`metricPrefix = ${this.metricPrefix}`);
             this.logger.info(`displayNamePrefix = ${this.displayNamePrefix}`);
             return new Promise((resolve, reject) => {
+                this.logger.info(`BEFORE:::::monitoring.projects.metricDescriptors.create()`);
                 monitoring.projects.metricDescriptors.create(request, { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] }, (err) => {
-                    this.logger.debug('sent metric descriptor', request.resource);
+                    // this.logger.error(`RESPONSE: ${JSON.stringify(res)}`)
+                    this.logger.debug('sent metric descriptor!', request.resource);
                     err ? reject(err) : resolve();
                 });
+                this.logger.info(`AFTER:::::monitoring.projects.metricDescriptors.create()`);
             }).catch(err => {
                 this.logger.error(`StackdriverStatsExporter: Failed to write data: ${err.message}`);
                 this.stop();
@@ -199,6 +209,7 @@ class StackdriverStatsExporter {
      * whenever the exporter is not needed anymore.
      */
     stop() {
+        this.logger.info("stop");
         clearInterval(this.timer);
     }
     /**
@@ -207,6 +218,7 @@ class StackdriverStatsExporter {
      */
     authorize() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.logger.debug(`authrozie()`);
             const client = yield auth.getClient();
             return client;
         });
@@ -217,14 +229,18 @@ class StackdriverStatsExporter {
      * Is called whenever a view is registered.
      * @param view The registered view.
      */
-    onRegisterView(view) { }
+    onRegisterView(view) {
+        this.logger.debug(`onRegisterView(view_name = ${view.name})`);
+    }
     /**
      * Is called whenever a measure is recorded.
      * @param views The views related to the measurement
      * @param measurement The recorded measurement
      * @param tags The tags to which the value is applied
      */
-    onRecord(views, measurement, tags) { }
+    onRecord(views, measurement, tags) {
+        this.logger.debug(`onRecord(views = []${views.length}, measurement_name = ${measurement.measure.name}, tags = ${tags})`);
+    }
 }
 exports.StackdriverStatsExporter = StackdriverStatsExporter;
 StackdriverStatsExporter.DEFAULT_DISPLAY_NAME_PREFIX = 'OpenCensus';

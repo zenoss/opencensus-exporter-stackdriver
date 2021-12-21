@@ -100,6 +100,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * Creates a Stackdriver Stats exporter with a StackdriverExporterOptions.
    */
   start(): void {
+    this.logger.debug("start")
     this.timer = setInterval(async () => {
       try {
         await this.export();
@@ -116,9 +117,13 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * MetricDescriptors, and upload them as TimeSeries to StackDriver.
    */
   async export() {
+    this.logger.debug("export()")
     const metricsList: Metric[] = [];
     const metricProducerManager: MetricProducerManager = Metrics.getMetricProducerManager();
+    this.logger.debug(`export(): metricProducerManager.getAllMetricProducer(): ${metricProducerManager.getAllMetricProducer().values()}`)
+
     for (const metricProducer of metricProducerManager.getAllMetricProducer()) {
+      this.logger.debug(`export(): metricProducer.getMetrics(): ${JSON.stringify(metricProducer.getMetrics())}`)
       for (const metric of metricProducer.getMetrics()) {
         // TODO(mayurkale): OPTIMIZATION: consider to call in parallel.
         const isRegistered = await this.registerMetricDescriptor(
@@ -140,6 +145,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * @param metricDescriptor The OpenCensus MetricDescriptor.
    */
   private async registerMetricDescriptor(metricDescriptor: OCMetricDescriptor) {
+    this.logger.debug(`registerMetricDescriptor(metricDescriptor_name = ${metricDescriptor.name})`)
     const existingMetricDescriptor = this.registeredMetricDescriptors.get(
       metricDescriptor.name
     );
@@ -176,6 +182,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * @param metricsList The List of Metric.
    */
   private async createTimeSeries(metricsList: Metric[]) {
+    this.logger.debug(`createTimeSeries(metricsList_lenght = ${metricsList.length})`)
     const timeSeries: TimeSeries[] = [];
     const monitoredResource = await this.DEFAULT_RESOURCE;
     for (const metric of metricsList) {
@@ -185,6 +192,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
     }
 
     if (timeSeries.length === 0) {
+      this.logger.warn(`createTimeSeries(): timeSeries is of 0 length`)
       return Promise.resolve();
     }
 
@@ -223,6 +231,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * @param metricDescriptor The OpenCensus MetricDescriptor.
    */
   private createMetricDescriptor(metricDescriptor: OCMetricDescriptor) {
+    this.logger.debug(`createMetricDescriptor(metricDescriptor_name = ${metricDescriptor.name})`)
     return this.authorize().then(authClient => {
       const request = {
         name: `projects/${this.projectId}`,
@@ -234,20 +243,22 @@ export class StackdriverStatsExporter implements StatsEventListener {
         auth: authClient,
       };
 
-      this.logger.info(`authClient = ${JSON.stringify(authClient)}`)
       this.logger.info(`projectId = ${this.projectId}`)
       this.logger.info(`metricPrefix = ${this.metricPrefix}`)
       this.logger.info(`displayNamePrefix = ${this.displayNamePrefix}`)
 
       return new Promise<void>((resolve, reject) => {
+        this.logger.info(`BEFORE:::::monitoring.projects.metricDescriptors.create()`)
         monitoring.projects.metricDescriptors.create(
           request,
           { headers: OC_HEADER, userAgentDirectives: [OC_USER_AGENT] },
           (err: Error | null) => {
-            this.logger.debug('sent metric descriptor', request.resource);
+            // this.logger.error(`RESPONSE: ${JSON.stringify(res)}`)
+            this.logger.debug('sent metric descriptor!', request.resource);
             err ? reject(err) : resolve();
           }
         );
+        this.logger.info(`AFTER:::::monitoring.projects.metricDescriptors.create()`)
       }).catch(err => {
         this.logger.error(
           `StackdriverStatsExporter: Failed to write data: ${err.message}`
@@ -262,6 +273,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * whenever the exporter is not needed anymore.
    */
   stop() {
+    this.logger.info("stop")
     clearInterval(this.timer);
   }
 
@@ -270,6 +282,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * and authenticates the client.
    */
   private async authorize(): Promise<JWT> {
+    this.logger.debug(`authrozie()`)
     const client = await auth.getClient();
     return client as JWT;
   }
@@ -280,7 +293,9 @@ export class StackdriverStatsExporter implements StatsEventListener {
    * Is called whenever a view is registered.
    * @param view The registered view.
    */
-  onRegisterView(view: View) {}
+  onRegisterView(view: View) {
+    this.logger.debug(`onRegisterView(view_name = ${view.name})`)
+  }
 
   /**
    * Is called whenever a measure is recorded.
@@ -292,5 +307,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
     views: View[],
     measurement: Measurement,
     tags: Map<TagKey, TagValue>
-  ) {}
+  ) {
+    this.logger.debug(`onRecord(views = []${views.length}, measurement_name = ${measurement.measure.name}, tags = ${tags})`)
+  }
 }
