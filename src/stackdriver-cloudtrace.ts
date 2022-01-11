@@ -195,7 +195,7 @@ export class StackdriverTraceExporter implements Exporter {
         resource: { spans: stackdriverSpans },
         auth: client as JWT,
       };
-    } catch (err) {
+    } catch (err: any) {
       err.message = `authorize error: ${err.message}`;
       this.logger.error(err.message);
       throw err;
