@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import { Bucket, ExporterConfig } from '@opencensus/core';
-import { JWT, JWTInput } from 'google-auth-library';
+import { CredentialBody, ExternalAccountClientOptions, JWT } from 'google-auth-library';
 export interface Span {
     name?: string;
     spanId?: string;
@@ -139,7 +139,7 @@ export interface StackdriverExporterOptions extends ExporterConfig {
      * If this field is set, its contents will be used for authentication
      * instead of your application default credentials. Optional
      */
-    credentials?: JWTInput;
+    credentials?: CredentialBody | ExternalAccountClientOptions | undefined;
     /**
      * Is called whenever the exporter fails to upload metrics to stackdriver.
      * Optional
