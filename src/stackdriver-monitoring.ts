@@ -101,13 +101,11 @@ export class StackdriverStatsExporter implements StatsEventListener {
    */
   start(): void {
     this.timer = setInterval(async () => {
-      try {
-        await this.export();
-      } catch (err) {
+      await this.export().catch(err => {
         if (typeof this.onMetricUploadError === 'function') {
           this.onMetricUploadError(err);
         }
-      }
+      });
     }, this.period);
   }
 

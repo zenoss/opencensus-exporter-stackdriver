@@ -71,14 +71,11 @@ class StackdriverStatsExporter {
      */
     start() {
         this.timer = setInterval(() => __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield this.export();
-            }
-            catch (err) {
+            yield this.export().catch(err => {
                 if (typeof this.onMetricUploadError === 'function') {
                     this.onMetricUploadError(err);
                 }
-            }
+            });
         }), this.period);
     }
     /**
