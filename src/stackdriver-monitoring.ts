@@ -190,7 +190,7 @@ export class StackdriverStatsExporter implements StatsEventListener {
 
     return this.authorize().then(authClient => {
       const promises: Promise<void>[] = [];
-      let chunkIndex: number = 0;
+      let chunkIndex = 0;
       while (chunkIndex < timeSeries.length) {
         const request = {
           name: `projects/${this.projectId}`,
