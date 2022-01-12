@@ -1,6 +1,8 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
+    "moduleResolution": "node",
+    "sourceMap": true,
     "rootDir": ".",
     "outDir": "build",
     "pretty": true,
